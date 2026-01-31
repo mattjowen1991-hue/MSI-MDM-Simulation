@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Deployment Simulator</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0a0e14;
+            --bg-panel: #121820;
+            --bg-terminal: #0d1117;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-purple: #8b5cf6;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #484f58;
+            --border-color: #21262d;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 300px;
+            background: radial-gradient(ellipse, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-blue) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            background: var(--bg-panel);
+            padding: 0.5rem;
+            border-radius: 12px;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .tab {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tab:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab.active {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .tab-icon {
+            font-size: 1.1rem;
+        }
+
+        .panel {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .card-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .card-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .card-icon.blue { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
+        .card-icon.green { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); }
+        .card-icon.orange { background: rgba(245, 158, 11, 0.15); color: var(--accent-orange); }
+        .card-icon.purple { background: rgba(139, 92, 246, 0.15); color: var(--accent-purple); }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        /* Terminal Styles */
+        .terminal {
+            background: var(--bg-terminal);
+            border-radius: 12px;
+            overflow: hidden;
+            font-family: 'JetBrains Mono', monospace;
+            border: 1px solid var(--border-color);
+        }
+
+        .terminal-header {
+            background: #161b22;
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .terminal-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .terminal-dot.red { background: #ff5f56; }
+        .terminal-dot.yellow { background: #ffbd2e; }
+        .terminal-dot.green { background: #27ca40; }
+
+        .terminal-title {
+            margin-left: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .terminal-body {
+            padding: 1rem;
+            min-height: 200px;
+            max-height: 350px;
+            overflow-y: auto;
+        }
+
+        .terminal-line {
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        .terminal-prompt {
+            color: var(--accent-green);
+        }
+
+        .terminal-command {
+            color: var(--text-primary);
+        }
+
+        .terminal-output {
+            color: var(--text-secondary);
+            padding-left: 1rem;
+        }
+
+        .terminal-success {
+            color: var(--accent-green);
+        }
+
+        .terminal-error {
+            color: var(--accent-red);
+        }
+
+        .terminal-warning {
+            color: var(--accent-orange);
+        }
+
+        .terminal-info {
+            color: var(--accent-blue);
+        }
+
+        /* Command Builder */
+        .command-builder {
+            margin-bottom: 1.5rem;
+        }
+
+        .command-preview {
+            background: var(--bg-terminal);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+            word-break: break-all;
+            min-height: 60px;
+        }
+
+        .command-preview .cmd {
+            color: var(--accent-blue);
+        }
+
+        .command-preview .flag {
+            color: var(--accent-orange);
+        }
+
+        .command-preview .path {
+            color: var(--accent-green);
+        }
+
+        .command-preview .value {
+            color: var(--accent-purple);
+        }
+
+        .flag-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+
+        .flag-option {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .flag-option:hover {
+            border-color: var(--accent-blue);
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .flag-option.selected {
+            border-color: var(--accent-blue);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .flag-option input {
+            margin-top: 2px;
+            accent-color: var(--accent-blue);
+        }
+
+        .flag-option label {
+            cursor: pointer;
+        }
+
+        .flag-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--accent-orange);
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .flag-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        /* MDM Flow Styles */
+        .mdm-flow {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .flow-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .flow-step::before {
+            content: '';
+            position: absolute;
+            left: 28px;
+            top: 100%;
+            width: 2px;
+            height: 1rem;
+            background: var(--border-color);
+        }
+
+        .flow-step:last-child::before {
+            display: none;
+        }
+
+        .flow-step.active {
+            border-color: var(--accent-blue);
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .flow-step.complete {
+            border-color: var(--accent-green);
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .flow-step.error {
+            border-color: var(--accent-red);
+            background: rgba(239, 68, 68, 0.05);
+        }
+
+        .step-number {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--bg-terminal);
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+
+        .flow-step.active .step-number {
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        .flow-step.complete .step-number {
+            border-color: var(--accent-green);
+            background: var(--accent-green);
+            color: white;
+        }
+
+        .flow-step.error .step-number {
+            border-color: var(--accent-red);
+            background: var(--accent-red);
+            color: white;
+        }
+
+        .step-content h4 {
+            font-size: 0.95rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .step-content p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .step-details {
+            margin-top: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg-terminal);
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            display: none;
+        }
+
+        .flow-step.active .step-details,
+        .flow-step.complete .step-details,
+        .flow-step.error .step-details {
+            display: block;
+        }
+
+        /* Scenario Selector */
+        .scenario-selector {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .scenario-btn {
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .scenario-btn:hover {
+            border-color: var(--accent-blue);
+            color: var(--text-primary);
+        }
+
+        .scenario-btn.active {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: white;
+        }
+
+        /* Info Box */
+        .info-box {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .info-box h4 {
+            font-size: 0.9rem;
+            color: var(--accent-blue);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-box p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .info-box code {
+            background: var(--bg-terminal);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--accent-orange);
+        }
+
+        /* Hubstaff Specific Section */
+        .hubstaff-section {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .hubstaff-section h3 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .hubstaff-command {
+            background: var(--bg-terminal);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            padding: 0.4rem 0.75rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--text-primary);
+        }
+
+        .copy-btn.copied {
+            background: var(--accent-green);
+            color: white;
+        }
+
+        /* Troubleshooting Section */
+        .troubleshoot-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .troubleshoot-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .troubleshoot-header {
+            padding: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: background 0.2s ease;
+        }
+
+        .troubleshoot-header:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .troubleshoot-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .troubleshoot-icon {
+            font-size: 1.2rem;
+        }
+
+        .troubleshoot-arrow {
+            transition: transform 0.2s ease;
+        }
+
+        .troubleshoot-item.open .troubleshoot-arrow {
+            transform: rotate(180deg);
+        }
+
+        .troubleshoot-content {
+            padding: 0 1rem 1rem;
+            display: none;
+        }
+
+        .troubleshoot-item.open .troubleshoot-content {
+            display: block;
+        }
+
+        .troubleshoot-content ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .troubleshoot-content li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .troubleshoot-content li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--accent-blue);
+        }
+
+        /* Progress Animation */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .processing {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-terminal);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Enterprise Deployment Simulator</h1>
+            <p class="subtitle">Interactive learning environment for MSI & MDM deployments</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('msi')">
+                <span class="tab-icon">📦</span>
+                MSI Silent Install
+            </button>
+            <button class="tab" onclick="switchTab('mdm')">
+                <span class="tab-icon">☁️</span>
+                MDM Deployment
+            </button>
+            <button class="tab" onclick="switchTab('troubleshoot')">
+                <span class="tab-icon">🔧</span>
+                Troubleshooting
+            </button>
+        </div>
+
+        <!-- MSI Panel -->
+        <div id="msi-panel" class="panel active">
+            <div class="grid">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon blue">⚙️</div>
+                        <h3>Command Builder</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="command-builder">
+                            <div class="command-preview" id="command-preview">
+                                <span class="cmd">msiexec</span> <span class="flag">/i</span> <span class="path">"C:\path\to\installer.msi"</span>
+                            </div>
+                            
+                            <div class="flag-grid">
+                                <div class="flag-option selected" onclick="toggleFlag(this, '/qn')">
+                                    <input type="checkbox" checked>
+                                    <label>
+                                        <span class="flag-name">/qn</span>
+                                        <span class="flag-desc">Quiet mode - no UI at all (fully silent)</span>
+                                    </label>
+                                </div>
+                                <div class="flag-option" onclick="toggleFlag(this, '/qb')">
+                                    <input type="checkbox">
+                                    <label>
+                                        <span class="flag-name">/qb</span>
+                                        <span class="flag-desc">Basic UI - progress bar only</span>
+                                    </label>
+                                </div>
+                                <div class="flag-option selected" onclick="toggleFlag(this, '/l*v')">
+                                    <input type="checkbox" checked>
+                                    <label>
+                                        <span class="flag-name">/l*v "log.txt"</span>
+                                        <span class="flag-desc">Verbose logging - essential for debugging</span>
+                                    </label>
+                                </div>
+                                <div class="flag-option" onclick="toggleFlag(this, '/norestart')">
+                                    <input type="checkbox">
+                                    <label>
+                                        <span class="flag-name">/norestart</span>
+                                        <span class="flag-desc">Suppress automatic restart</span>
+                                    </label>
+                                </div>
+                                <div class="flag-option" onclick="toggleFlag(this, '/passive')">
+                                    <input type="checkbox">
+                                    <label>
+                                        <span class="flag-name">/passive</span>
+                                        <span class="flag-desc">Unattended mode with progress bar</span>
+                                    </label>
+                                </div>
+                                <div class="flag-option" onclick="toggleFlag(this, 'ALLUSERS=1')">
+                                    <input type="checkbox">
+                                    <label>
+                                        <span class="flag-name">ALLUSERS=1</span>
+                                        <span class="flag-desc">Install for all users on the machine</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="btn-group">
+                            <button class="btn btn-primary" onclick="runSimulation('success')">
+                                ▶️ Run Installation
+                            </button>
+                            <button class="btn btn-secondary" onclick="runSimulation('error')">
+                                ⚠️ Simulate Error
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon green">💻</div>
+                        <h3>Terminal Output</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="terminal">
+                            <div class="terminal-header">
+                                <div class="terminal-dot red"></div>
+                                <div class="terminal-dot yellow"></div>
+                                <div class="terminal-dot green"></div>
+                                <span class="terminal-title">Command Prompt - Administrator</span>
+                            </div>
+                            <div class="terminal-body" id="terminal-output">
+                                <div class="terminal-line">
+                                    <span class="terminal-prompt">C:\Windows\System32&gt;</span>
+                                    <span class="terminal-info"> Ready to run installation...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="info-box">
+                            <h4>💡 Pro Tip</h4>
+                            <p>Always use <code>/l*v</code> for logging when troubleshooting. The asterisk captures all log types (warnings, errors, actions, etc.) and <code>v</code> enables verbose output. This is the first thing to check when an install fails silently.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hubstaff-section">
+                <h3>🎯 Hubstaff-Specific Silent Installation</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">This is the actual command IT teams use to deploy Hubstaff silently across their organization:</p>
+                
+                <div class="hubstaff-command">
+                    <button class="copy-btn" onclick="copyCommand(this)">Copy</button>
+                    <code>msiexec /i "HubstaffSetup.msi" /qn /l*v "hubstaff_install.log" WRAPPED_ARGUMENTS="/silent /email:user@company.com /password:temppass123"</code>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                    <div>
+                        <h4 style="font-size: 0.9rem; color: var(--accent-blue); margin-bottom: 0.5rem;">Key Parameters:</h4>
+                        <ul style="list-style: none; font-size: 0.85rem; color: var(--text-secondary);">
+                            <li style="margin-bottom: 0.5rem;"><code>/silent</code> - Runs setup without user interaction</li>
+                            <li style="margin-bottom: 0.5rem;"><code>/email</code> - Pre-configures user email</li>
+                            <li style="margin-bottom: 0.5rem;"><code>/password</code> - Sets initial password</li>
+                            <li><code>/org</code> - Can specify organization</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="font-size: 0.9rem; color: var(--accent-green); margin-bottom: 0.5rem;">Documentation:</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary);">
+                            Full details available at:<br>
+                            <a href="https://support.hubstaff.com/hubstaff-silent-app-setup/" target="_blank" style="color: var(--accent-blue);">support.hubstaff.com/hubstaff-silent-app-setup/</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MDM Panel -->
+        <div id="mdm-panel" class="panel">
+            <div class="grid">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon purple">☁️</div>
+                        <h3>Intune Deployment Flow</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="scenario-selector">
+                            <button class="scenario-btn active" onclick="selectScenario('success')">✅ Successful Deploy</button>
+                            <button class="scenario-btn" onclick="selectScenario('pending')">⏳ Pending State</button>
+                            <button class="scenario-btn" onclick="selectScenario('failed')">❌ Failed Install</button>
+                        </div>
+
+                        <div class="mdm-flow" id="mdm-flow">
+                            <div class="flow-step" id="step-1">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <h4>Package Upload</h4>
+                                    <p>Admin uploads .intunewin package to Intune portal</p>
+                                    <div class="step-details">
+                                        Status: Package validated and uploaded<br>
+                                        Size: 45.2 MB | Type: Win32 App
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flow-step" id="step-2">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <h4>Assignment Configuration</h4>
+                                    <p>App assigned to device groups or users</p>
+                                    <div class="step-details">
+                                        Assignment: Required for "Engineering Dept"<br>
+                                        Install context: System
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flow-step" id="step-3">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <h4>Device Check-in</h4>
+                                    <p>Target device syncs with Intune service</p>
+                                    <div class="step-details">
+                                        Last sync: Waiting for device...<br>
+                                        Sync interval: ~8 hours (or manual)
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flow-step" id="step-4">
+                                <div class="step-number">4</div>
+                                <div class="step-content">
+                                    <h4>Download & Install</h4>
+                                    <p>Package downloaded and installation executed</p>
+                                    <div class="step-details">
+                                        Download: Pending<br>
+                                        Install command: msiexec /i "hubstaff.msi" /qn
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flow-step" id="step-5">
+                                <div class="step-number">5</div>
+                                <div class="step-content">
+                                    <h4>Detection & Reporting</h4>
+                                    <p>Intune verifies installation success</p>
+                                    <div class="step-details">
+                                        Detection rule: File exists at C:\Program Files\Hubstaff\HubstaffClient.exe<br>
+                                        Status: Awaiting verification
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="btn-group">
+                            <button class="btn btn-primary" onclick="runMDMSimulation()">
+                                ▶️ Simulate Deployment
+                            </button>
+                            <button class="btn btn-secondary" onclick="resetMDM()">
+                                🔄 Reset
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon orange">📊</div>
+                        <h3>Deployment Status</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="terminal">
+                            <div class="terminal-header">
+                                <div class="terminal-dot red"></div>
+                                <div class="terminal-dot yellow"></div>
+                                <div class="terminal-dot green"></div>
+                                <span class="terminal-title">Intune Management Extension Log</span>
+                            </div>
+                            <div class="terminal-body" id="mdm-log">
+                                <div class="terminal-line">
+                                    <span class="terminal-info">[Intune] Awaiting deployment simulation...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="info-box">
+                            <h4>💡 Intune Deployment Tips</h4>
+                            <p>When troubleshooting Intune deployments, check the <code>IntuneManagementExtension.log</code> on the device at <code>C:\ProgramData\Microsoft\IntuneManagementExtension\Logs\</code>. This shows the exact download and install process.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hubstaff-section">
+                <h3>🎯 Hubstaff Intune Deployment Guide</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">Hubstaff provides specific documentation for deploying via Microsoft Intune:</p>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+                    <div>
+                        <h4 style="font-size: 0.9rem; color: var(--accent-blue); margin-bottom: 0.75rem;">Setup Steps:</h4>
+                        <ol style="font-size: 0.85rem; color: var(--text-secondary); padding-left: 1.25rem;">
+                            <li style="margin-bottom: 0.5rem;">Download Hubstaff MSI from admin dashboard</li>
+                            <li style="margin-bottom: 0.5rem;">Use Microsoft Win32 Content Prep Tool to create .intunewin</li>
+                            <li style="margin-bottom: 0.5rem;">Upload to Intune as Win32 app</li>
+                            <li style="margin-bottom: 0.5rem;">Configure install command with silent flags</li>
+                            <li>Set detection rule for HubstaffClient.exe</li>
+                        </ol>
+                    </div>
+                    <div>
+                        <h4 style="font-size: 0.9rem; color: var(--accent-green); margin-bottom: 0.75rem;">Common Issues:</h4>
+                        <ul style="list-style: none; font-size: 0.85rem; color: var(--text-secondary);">
+                            <li style="margin-bottom: 0.5rem;">⚠️ Detection rules misconfigured → App shows "Not Installed"</li>
+                            <li style="margin-bottom: 0.5rem;">⚠️ 64-bit vs 32-bit path mismatch</li>
+                            <li style="margin-bottom: 0.5rem;">⚠️ Device not syncing → Force sync in Company Portal</li>
+                            <li>⚠️ Install context wrong → Use System for silent installs</li>
+                        </ul>
+                    </div>
+                </div>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 1rem;">
+                    Full guide: <a href="https://support.hubstaff.com/silent-app-setup-intune/" target="_blank" style="color: var(--accent-blue);">support.hubstaff.com/silent-app-setup-intune/</a>
+                </p>
+            </div>
+        </div>
+
+        <!-- Troubleshooting Panel -->
+        <div id="troubleshoot-panel" class="panel">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon orange">🔧</div>
+                    <h3>Common Deployment Issues & Solutions</h3>
+                </div>
+                <div class="card-body">
+                    <div class="troubleshoot-grid">
+                        <div class="troubleshoot-item">
+                            <div class="troubleshoot-header" onclick="toggleTroubleshoot(this)">
+                                <div class="troubleshoot-title">
+                                    <span class="troubleshoot-icon">❌</span>
+                                    <span>MSI Error 1603 - Fatal Installation Error</span>
+                                </div>
+                                <span class="troubleshoot-arrow">▼</span>
+                            </div>
+                            <div class="troubleshoot-content">
+                                <p style="margin-bottom: 0.75rem; color: var(--text-secondary);">This generic error usually means something blocked the install. Check these in order:</p>
+                                <ul>
+                                    <li>Previous version still installed → Uninstall first, then retry</li>
+                                    <li>Insufficient permissions → Run as Administrator or SYSTEM</li>
+                                    <li>Files in use → Close all related applications</li>
+                                    <li>Disk space → Verify sufficient space on target drive</li>
+                                    <li>Check the verbose log: search for "Return value 3" to find the exact failure point</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="troubleshoot-item">
+                            <div class="troubleshoot-header" onclick="toggleTroubleshoot(this)">
+                                <div class="troubleshoot-title">
+                                    <span class="troubleshoot-icon">⏳</span>
+                                    <span>Intune App Stuck in "Pending" State</span>
+                                </div>
+                                <span class="troubleshoot-arrow">▼</span>
+                            </div>
+                            <div class="troubleshoot-content">
+                                <p style="margin-bottom: 0.75rem; color: var(--text-secondary);">Device hasn't processed the deployment yet:</p>
+                                <ul>
+                                    <li>Device hasn't checked in → Open Company Portal, go to Settings → Sync</li>
+                                    <li>Intune Management Extension not running → Check Services for "Microsoft Intune Management Extension"</li>
+                                    <li>Network issues → Device needs internet access to download from CDN</li>
+                                    <li>Check IME log at C:\ProgramData\Microsoft\IntuneManagementExtension\Logs\</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="troubleshoot-item">
+                            <div class="troubleshoot-header" onclick="toggleTroubleshoot(this)">
+                                <div class="troubleshoot-title">
+                                    <span class="troubleshoot-icon">🔍</span>
+                                    <span>App Installed But Shows "Not Detected"</span>
+                                </div>
+                                <span class="troubleshoot-arrow">▼</span>
+                            </div>
+                            <div class="troubleshoot-content">
+                                <p style="margin-bottom: 0.75rem; color: var(--text-secondary);">Detection rule mismatch - the app is there but Intune can't verify it:</p>
+                                <ul>
+                                    <li>Wrong file path → Check if using Program Files vs Program Files (x86)</li>
+                                    <li>Version mismatch → Detection rule expects different version than installed</li>
+                                    <li>Registry key changed → Verify exact registry path exists</li>
+                                    <li>User vs System context → Detection runs as SYSTEM, not user</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="troubleshoot-item">
+                            <div class="troubleshoot-header" onclick="toggleTroubleshoot(this)">
+                                <div class="troubleshoot-title">
+                                    <span class="troubleshoot-icon">🛡️</span>
+                                    <span>Silent Install Blocked by Antivirus/Firewall</span>
+                                </div>
+                                <span class="troubleshoot-arrow">▼</span>
+                            </div>
+                            <div class="troubleshoot-content">
+                                <p style="margin-bottom: 0.75rem; color: var(--text-secondary);">Security software can interfere with automated deployments:</p>
+                                <ul>
+                                    <li>Windows Defender → Add exclusion for installer and install directory</li>
+                                    <li>Third-party AV → Check quarantine for blocked files</li>
+                                    <li>Application control (AppLocker) → Ensure MSI and EXE are allowed</li>
+                                    <li>For Hubstaff specifically → Whitelist hubstaff.com and api.hubstaff.com</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="troubleshoot-item">
+                            <div class="troubleshoot-header" onclick="toggleTroubleshoot(this)">
+                                <div class="troubleshoot-title">
+                                    <span class="troubleshoot-icon">👥</span>
+                                    <span>RDS/Multi-User Environment Issues</span>
+                                </div>
+                                <span class="troubleshoot-arrow">▼</span>
+                            </div>
+                            <div class="troubleshoot-content">
+                                <p style="margin-bottom: 0.75rem; color: var(--text-secondary);">Remote Desktop Services require special handling:</p>
+                                <ul>
+                                    <li>Install must be per-machine, not per-user → Use ALLUSERS=1</li>
+                                    <li>Put server in Install Mode → Run "change user /install" before, then "change user /execute" after</li>
+                                    <li>Activity tracking issues → Hubstaff needs to run in each user's session</li>
+                                    <li>For Hubstaff on RDS → Each user needs their own login credentials configured</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hubstaff-section" style="margin-top: 1.5rem;">
+                <h3>📋 Quick Reference: Hubstaff Deployment Checklist</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1rem;">
+                    <div>
+                        <h4 style="font-size: 0.9rem; color: var(--accent-blue); margin-bottom: 0.75rem;">Before Deployment:</h4>
+                        <ul style="list-style: none; font-size: 0.85rem; color: var(--text-secondary);">
+                            <li style="margin-bottom: 0.5rem;">☐ Download latest MSI from Hubstaff admin</li>
+                            <li style="margin-bottom: 0.5rem;">☐ Verify target machines meet requirements</li>
+                            <li style="margin-bottom: 0.5rem;">☐ Whitelist Hubstaff domains in firewall</li>
+                            <li style="margin-bottom: 0.5rem;">☐ Prepare user credentials or SSO config</li>
+                            <li>☐ Test on single machine first</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="font-size: 0.9rem; color: var(--accent-green); margin-bottom: 0.75rem;">After Deployment:</h4>
+                        <ul style="list-style: none; font-size: 0.85rem; color: var(--text-secondary);">
+                            <li style="margin-bottom: 0.5rem;">☐ Verify app appears in installed programs</li>
+                            <li style="margin-bottom: 0.5rem;">☐ Check user can log in successfully</li>
+                            <li style="margin-bottom: 0.5rem;">☐ Confirm activity tracking is working</li>
+                            <li style="margin-bottom: 0.5rem;">☐ Test screenshot capture (if enabled)</li>
+                            <li>☐ Verify data appears in Hubstaff dashboard</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            
+            event.target.closest('.tab').classList.add('active');
+            document.getElementById(`${tabName}-panel`).classList.add('active');
+        }
+
+        // MSI Flags state
+        let activeFlags = ['/qn', '/l*v'];
+
+        function toggleFlag(element, flag) {
+            const checkbox = element.querySelector('input');
+            checkbox.checked = !checkbox.checked;
+            element.classList.toggle('selected');
+
+            // Handle mutually exclusive flags
+            if (flag === '/qn' && checkbox.checked) {
+                removeFlag('/qb');
+                removeFlag('/passive');
+            } else if (flag === '/qb' && checkbox.checked) {
+                removeFlag('/qn');
+                removeFlag('/passive');
+            } else if (flag === '/passive' && checkbox.checked) {
+                removeFlag('/qn');
+                removeFlag('/qb');
+            }
+
+            if (checkbox.checked) {
+                activeFlags.push(flag);
+            } else {
+                activeFlags = activeFlags.filter(f => f !== flag);
+            }
+
+            updateCommandPreview();
+        }
+
+        function removeFlag(flag) {
+            activeFlags = activeFlags.filter(f => f !== flag);
+            document.querySelectorAll('.flag-option').forEach(opt => {
+                const flagName = opt.querySelector('.flag-name').textContent.split(' ')[0];
+                if (flagName === flag) {
+                    opt.classList.remove('selected');
+                    opt.querySelector('input').checked = false;
+                }
+            });
+        }
+
+        function updateCommandPreview() {
+            const preview = document.getElementById('command-preview');
+            let cmd = '<span class="cmd">msiexec</span> <span class="flag">/i</span> <span class="path">"C:\\Installers\\HubstaffSetup.msi"</span>';
+            
+            activeFlags.forEach(flag => {
+                if (flag === '/l*v') {
+                    cmd += ` <span class="flag">/l*v</span> <span class="value">"C:\\Logs\\hubstaff_install.log"</span>`;
+                } else if (flag === 'ALLUSERS=1') {
+                    cmd += ` <span class="value">ALLUSERS=1</span>`;
+                } else {
+                    cmd += ` <span class="flag">${flag}</span>`;
+                }
+            });
+            
+            preview.innerHTML = cmd;
+        }
+
+        // Terminal simulation
+        function runSimulation(type) {
+            const terminal = document.getElementById('terminal-output');
+            terminal.innerHTML = '';
+            
+            const lines = type === 'success' ? getSuccessLines() : getErrorLines();
+            
+            lines.forEach((line, index) => {
+                setTimeout(() => {
+                    const div = document.createElement('div');
+                    div.className = 'terminal-line';
+                    div.innerHTML = line;
+                    terminal.appendChild(div);
+                    terminal.scrollTop = terminal.scrollHeight;
+                }, index * 400);
+            });
+        }
+
+        function getSuccessLines() {
+            const hasLogging = activeFlags.includes('/l*v');
+            const isSilent = activeFlags.includes('/qn');
+            
+            let lines = [
+                '<span class="terminal-prompt">C:\\Windows\\System32&gt;</span> <span class="terminal-command">' + document.getElementById('command-preview').textContent + '</span>',
+                '<span class="terminal-output">Starting installation process...</span>'
+            ];
+            
+            if (hasLogging) {
+                lines.push('<span class="terminal-info">[LOG] Verbose logging enabled → C:\\Logs\\hubstaff_install.log</span>');
+            }
+            
+            if (isSilent) {
+                lines.push('<span class="terminal-output">Running in quiet mode (no UI)...</span>');
+            }
+            
+            lines = lines.concat([
+                '<span class="terminal-output">Validating package signature...</span>',
+                '<span class="terminal-info">[MSI] Package validated successfully</span>',
+                '<span class="terminal-output">Extracting files to C:\\Program Files\\Hubstaff\\...</span>',
+                '<span class="terminal-output">Registering application components...</span>',
+                '<span class="terminal-output">Creating Start Menu shortcuts...</span>',
+                '<span class="terminal-output">Configuring auto-start settings...</span>',
+                '<span class="terminal-success">[SUCCESS] Installation completed successfully!</span>',
+                '<span class="terminal-info">Exit code: 0</span>',
+                '<span class="terminal-prompt">C:\\Windows\\System32&gt;</span>'
+            ]);
+            
+            return lines;
+        }
+
+        function getErrorLines() {
+            return [
+                '<span class="terminal-prompt">C:\\Windows\\System32&gt;</span> <span class="terminal-command">' + document.getElementById('command-preview').textContent + '</span>',
+                '<span class="terminal-output">Starting installation process...</span>',
+                '<span class="terminal-info">[LOG] Verbose logging enabled → C:\\Logs\\hubstaff_install.log</span>',
+                '<span class="terminal-output">Validating package signature...</span>',
+                '<span class="terminal-info">[MSI] Package validated successfully</span>',
+                '<span class="terminal-output">Extracting files to C:\\Program Files\\Hubstaff\\...</span>',
+                '<span class="terminal-warning">[WARNING] File in use: HubstaffClient.exe</span>',
+                '<span class="terminal-output">Attempting to register components...</span>',
+                '<span class="terminal-error">[ERROR] Failed to write to registry key</span>',
+                '<span class="terminal-error">[MSI] Installation failed with error code 1603</span>',
+                '<span class="terminal-warning">Check log file for details: C:\\Logs\\hubstaff_install.log</span>',
+                '<span class="terminal-info">Exit code: 1603</span>',
+                '<span class="terminal-output"></span>',
+                '<span class="terminal-info">💡 Troubleshooting: Error 1603 typically means:</span>',
+                '<span class="terminal-output">  • Previous version still installed</span>',
+                '<span class="terminal-output">  • Files are in use (close the application)</span>',
+                '<span class="terminal-output">  • Insufficient permissions (run as Admin)</span>',
+                '<span class="terminal-prompt">C:\\Windows\\System32&gt;</span>'
+            ];
+        }
+
+        // MDM Flow simulation
+        let currentScenario = 'success';
+        let mdmRunning = false;
+
+        function selectScenario(scenario) {
+            currentScenario = scenario;
+            document.querySelectorAll('.scenario-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            resetMDM();
+        }
+
+        function resetMDM() {
+            mdmRunning = false;
+            document.querySelectorAll('.flow-step').forEach(step => {
+                step.classList.remove('active', 'complete', 'error');
+            });
+            document.getElementById('mdm-log').innerHTML = '<div class="terminal-line"><span class="terminal-info">[Intune] Awaiting deployment simulation...</span></div>';
+        }
+
+        function runMDMSimulation() {
+            if (mdmRunning) return;
+            mdmRunning = true;
+            resetMDM();
+
+            const steps = document.querySelectorAll('.flow-step');
+            const log = document.getElementById('mdm-log');
+            log.innerHTML = '';
+
+            const scenarios = {
+                success: [
+                    { step: 0, status: 'complete', log: '[Intune] Package upload complete - 45.2 MB', logClass: 'terminal-info' },
+                    { step: 1, status: 'complete', log: '[Intune] Assignment configured: Required for "Engineering Dept"', logClass: 'terminal-info' },
+                    { step: 2, status: 'complete', log: '[Device] Check-in successful - Policy received', logClass: 'terminal-info' },
+                    { step: 3, status: 'complete', log: '[IME] Downloading package from CDN...', logClass: 'terminal-output' },
+                    { step: 3, status: 'complete', log: '[IME] Download complete. Starting installation...', logClass: 'terminal-info' },
+                    { step: 3, status: 'complete', log: '[IME] Executing: msiexec /i "hubstaff.msi" /qn', logClass: 'terminal-output' },
+                    { step: 4, status: 'complete', log: '[IME] Running detection rules...', logClass: 'terminal-output' },
+                    { step: 4, status: 'complete', log: '[IME] Detection successful: HubstaffClient.exe found', logClass: 'terminal-success' },
+                    { step: 4, status: 'complete', log: '[Intune] ✓ Installation reported as successful', logClass: 'terminal-success' }
+                ],
+                pending: [
+                    { step: 0, status: 'complete', log: '[Intune] Package upload complete - 45.2 MB', logClass: 'terminal-info' },
+                    { step: 1, status: 'complete', log: '[Intune] Assignment configured: Required for "Engineering Dept"', logClass: 'terminal-info' },
+                    { step: 2, status: 'active', log: '[Device] Awaiting check-in...', logClass: 'terminal-warning' },
+                    { step: 2, status: 'active', log: '[Intune] Device last seen: 14 hours ago', logClass: 'terminal-output' },
+                    { step: 2, status: 'active', log: '[Tip] User can force sync via Company Portal → Settings → Sync', logClass: 'terminal-info' }
+                ],
+                failed: [
+                    { step: 0, status: 'complete', log: '[Intune] Package upload complete - 45.2 MB', logClass: 'terminal-info' },
+                    { step: 1, status: 'complete', log: '[Intune] Assignment configured: Required for "Engineering Dept"', logClass: 'terminal-info' },
+                    { step: 2, status: 'complete', log: '[Device] Check-in successful - Policy received', logClass: 'terminal-info' },
+                    { step: 3, status: 'complete', log: '[IME] Downloading package from CDN...', logClass: 'terminal-output' },
+                    { step: 3, status: 'complete', log: '[IME] Download complete. Starting installation...', logClass: 'terminal-info' },
+                    { step: 3, status: 'error', log: '[IME] Error: Installation failed with exit code 1603', logClass: 'terminal-error' },
+                    { step: 3, status: 'error', log: '[IME] Previous installation detected - uninstall required', logClass: 'terminal-warning' },
+                    { step: 4, status: 'error', log: '[Intune] ✗ Installation reported as failed', logClass: 'terminal-error' },
+                    { step: 4, status: 'error', log: '[Tip] Check IntuneManagementExtension.log for details', logClass: 'terminal-info' }
+                ]
+            };
+
+            const timeline = scenarios[currentScenario];
+            let lastStep = -1;
+
+            timeline.forEach((item, index) => {
+                setTimeout(() => {
+                    // Update step visual
+                    if (item.step !== lastStep) {
+                        if (lastStep >= 0 && item.step > lastStep) {
+                            steps[lastStep].classList.remove('active');
+                            steps[lastStep].classList.add('complete');
+                        }
+                        steps[item.step].classList.add(item.status);
+                        lastStep = item.step;
+                    }
+                    steps[item.step].className = 'flow-step ' + item.status;
+
+                    // Add log line
+                    const logLine = document.createElement('div');
+                    logLine.className = 'terminal-line';
+                    logLine.innerHTML = `<span class="${item.logClass}">${item.log}</span>`;
+                    log.appendChild(logLine);
+                    log.scrollTop = log.scrollHeight;
+                }, index * 800);
+            });
+        }
+
+        // Troubleshooting accordion
+        function toggleTroubleshoot(header) {
+            const item = header.closest('.troubleshoot-item');
+            item.classList.toggle('open');
+        }
+
+        // Copy command
+        function copyCommand(btn) {
+            const command = btn.parentElement.querySelector('code').textContent;
+            navigator.clipboard.writeText(command).then(() => {
+                btn.textContent = 'Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = 'Copy';
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // Initialize
+        updateCommandPreview();
+    </script>
+</body>
+</html>
