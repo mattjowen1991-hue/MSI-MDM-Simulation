@@ -83,10 +83,37 @@ This is the most common MSI error. It's generic, which means you need to check t
 #### Error 1618: Another Installation in Progress
 
 Windows can only run one MSI installation at a time. Wait for the other install to finish, or check for stuck msiexec processes.
+How to check for stuck msiexec processes:
+
+Open Task Manager (Ctrl + Shift + Esc)
+Go to the "Details" tab
+Look for any msiexec.exe processes
+If you see one that's been running for a long time (or the install you expected has finished), right-click → End task
+
+Alternatively, via Command Prompt (as Administrator):
+tasklist | findstr msiexec
+If processes appear, kill them with:
+taskkill /f /im msiexec.exe
+Note: Be careful — only kill msiexec if you're certain no legitimate install is running, as this can leave software in a broken state.
 
 #### Error 1619: Package Could Not Be Opened
 
 The MSI file is corrupted, missing, or the path is wrong. Verify the file exists and the path has proper quotes if it contains spaces.
+How to verify the file and path:
+
+Check the file exists — Open File Explorer and navigate to the path. Can you see the MSI file?
+Check for typos — Compare your command path character-by-character with the actual file location
+Wrap paths with spaces in quotes — This is a common gotcha:
+
+   ❌ Wrong:  msiexec /i C:\Program Files\Installers\HubstaffSetup.msi /qn
+   ✅ Right:  msiexec /i "C:\Program Files\Installers\HubstaffSetup.msi" /qn
+
+Test via Command Prompt — Run this to confirm Windows can see the file:
+
+   dir "C:\path\to\HubstaffSetup.msi"
+If it returns "File Not Found", the path is wrong or the file doesn't exist.
+
+Check file integrity — If the file exists but still fails, it may be corrupted. Re-download the MSI and try again. You can also check the file size matches what you expect.
 
 ### Interview Talking Points
 
