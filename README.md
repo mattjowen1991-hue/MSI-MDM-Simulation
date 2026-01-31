@@ -106,6 +106,7 @@ Check for typos — Compare your command path character-by-character with the ac
 Wrap paths with spaces in quotes — This is a common gotcha:
 
    ❌ Wrong:  msiexec /i C:\Program Files\Installers\HubstaffSetup.msi /qn
+   
    ✅ Right:  msiexec /i "C:\Program Files\Installers\HubstaffSetup.msi" /qn
 
 Test via Command Prompt — Run this to confirm Windows can see the file:
