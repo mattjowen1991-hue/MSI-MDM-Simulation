@@ -83,6 +83,7 @@ This is the most common MSI error. It's generic, which means you need to check t
 #### Error 1618: Another Installation in Progress
 
 Windows can only run one MSI installation at a time. Wait for the other install to finish, or check for stuck msiexec processes.
+
 How to check for stuck msiexec processes:
 
 Open Task Manager (Ctrl + Shift + Esc)
@@ -112,6 +113,7 @@ Wrap paths with spaces in quotes — This is a common gotcha:
 Test via Command Prompt — Run this to confirm Windows can see the file:
 
    dir "C:\path\to\HubstaffSetup.msi"
+   
 If it returns "File Not Found", the path is wrong or the file doesn't exist.
 
 Check file integrity — If the file exists but still fails, it may be corrupted. Re-download the MSI and try again. You can also check the file size matches what you expect.
